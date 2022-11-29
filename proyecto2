@@ -1,0 +1,51 @@
+import json
+  
+# con esto abrimos el train 
+#Si su compu no lo pone bonito visualmente pueden descargar firefox developer edition y/o json formatter pro
+
+f = open('train-v2.0.json')
+  
+# returns JSON object as 
+# a dictionary
+data = json.load(f)['data'] #Accesamos directo a la data
+
+file_context = data[0]['paragraphs'][0]['context']
+print(file_context)
+
+#procedemos a tokenizar 
+
+import nltk
+#nltk.download('punkt')
+#nltk.download('stopwords')
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize
+from nltk.tokenize import word_tokenize
+
+#hacemos el preprocesamiento que nos piden Luis --> tokenización
+
+#Set all words to lowercase --> paso 1
+file_context = file_context.lower()
+#print(file_context)
+
+#Remove stopwords --> paso 2
+my_txt = file_context
+filtered_list = []
+stop_words = nltk.corpus.stopwords.words('english')
+# Tokenize the sentence
+words = word_tokenize(my_txt)
+for w in words:
+    if w.lower() not in stop_words:
+        filtered_list.append(w)
+        
+print('List without stop words')
+print(filtered_list)
+
+my_clean_txt = " ".join(filtered_list)
+print(my_clean_txt)
+
+#print(file_context)
+
+#tokenized_text=sent_tokenize(text)
+#print(tokenized_text)
+
+#Drop words with less than 5 ocurrences
