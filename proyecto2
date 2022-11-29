@@ -49,4 +49,4 @@ print(my_clean_txt)
 #tokenized_text=sent_tokenize(text)
 #print(tokenized_text)
 
-#Drop words with less than 5 ocurrences
+#Drop words with less than 5 ocurrences --> paso 3
