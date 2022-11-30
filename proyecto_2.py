@@ -1,18 +1,20 @@
-#%%
+
 import pandas as pd
 import json 
-import string
 from nltk.corpus import stopwords
 import numpy as np
-#%%
+
 def jaccard_distnace():
     assert NotImplementedError
 
-#%%
+
 stop = stopwords.words('english')
+
+
 
 with open('train-v2.0.json','r') as f:
     data = json.loads(f.read())
+
 
 train = pd.json_normalize(data, record_path = ['data', 'paragraphs', 'qas', 'answers'], 
 meta = [['data', 'title'], ['data', 'paragraphs', 'context'], ['data', 'paragraphs', 'qas', 'question'], ['data', 'paragraphs', 'qas', 'is_impossible']])
@@ -24,7 +26,15 @@ train['question'] = train['question'].str.lower()
 train['context'] = train['context'].str.lower()
 
 train['context'] = train['context'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-train['context'] = train['context'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+train['question'] = train['question'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+
+train['context'] = train['context'].str.split(".")
+
+print(train['context'].loc[0][1])
+
+jaccard_df = pd.DataFrame()
+
+# print(train['context'].head(10))
 
 '''
 train["context"]= train["context"].str.split(".", expand = True)
@@ -37,4 +47,3 @@ for row in train:
 
 print(train.head(10))
 '''
-# %%
