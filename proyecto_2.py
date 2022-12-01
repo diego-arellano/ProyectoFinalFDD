@@ -1,19 +1,25 @@
+#%%
 import pandas as pd
 import json 
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+import nltk
+import numpy as np
+nltk.download('stopwords')
+nltk.download('punkt')
 
 def jaccard_distance(a, b):
     assert NotImplementedError
-    intersection = len(list(set(a).intersection(a)))
+    print(a,b)
+    intersection = len(list(set(a).intersection(b)))
     union = (len(a) + len(b)) - intersection
+    if union == 0: 
+        return np.inf
     return float(intersection) / union
 
 
 
-stop = stopwords.words('english')
+stop = nltk.corpus.stopwords.words('english')
 
-
+#%%
 
 with open('train-v2.0.json','r') as f:
     data = json.loads(f.read())
@@ -28,7 +34,7 @@ train['amswer'] = train['answer'].str.lower()
 train['question'] = train['question'].str.lower()
 train['context'] = train['context'].str.lower()
 
-
+train['context'] = train['context'].str.replace(r'[?!,\'()]+', '')
 
 train['context'] = train['context'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 train['question'] = train['question'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
@@ -36,11 +42,20 @@ train['question'] = train['question'].apply(lambda x: ' '.join([word for word in
 train['context'] = train['context'].str.split(".")
 
 train = train.explode('context') 
-train['context'] = train['context'].apply(lambda x: word_tokenize(x))
+train['context'] = train['context'].apply(lambda x: nltk.tokenize.word_tokenize(x))
+train['question'] = train['question'].apply(lambda x: nltk.tokenize.word_tokenize(x))
 
-#jaccard_df = pd.DataFrame()
+train = train[train['context'].map(lambda x: len(x)) > 0]
 
-print(train['context'].head(10))
+#%%
+
+jaccard_df = pd.DataFrame()
+
+train_short = train.loc[0]
+
+jaccard_df["Jaccard(context_i_line_j, q_i_k)"] = train_short.apply(lambda x: jaccard_distance(x['context'], x['question']), axis=1)
+
+print(jaccard_df["Jaccard(context_i_line_j, q_i_k)"].head(10))
 
 '''
 train["context"]= train["context"].str.split(".", expand = True)
@@ -53,3 +68,5 @@ for row in train:
 
 print(train.head(10))
 '''
+
+# %%
