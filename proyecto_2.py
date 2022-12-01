@@ -1,11 +1,14 @@
-
 import pandas as pd
 import json 
 from nltk.corpus import stopwords
-import numpy as np
+from nltk.tokenize import word_tokenize
 
-def jaccard_distnace():
+def jaccard_distance(a, b):
     assert NotImplementedError
+    intersection = len(list(set(a).intersection(a)))
+    union = (len(a) + len(b)) - intersection
+    return float(intersection) / union
+
 
 
 stop = stopwords.words('english')
@@ -25,16 +28,19 @@ train['amswer'] = train['answer'].str.lower()
 train['question'] = train['question'].str.lower()
 train['context'] = train['context'].str.lower()
 
+
+
 train['context'] = train['context'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 train['question'] = train['question'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
 train['context'] = train['context'].str.split(".")
 
-print(train['context'].loc[0][1])
+train = train.explode('context') 
+train['context'] = train['context'].apply(lambda x: word_tokenize(x))
 
-jaccard_df = pd.DataFrame()
+#jaccard_df = pd.DataFrame()
 
-# print(train['context'].head(10))
+print(train['context'].head(10))
 
 '''
 train["context"]= train["context"].str.split(".", expand = True)
