@@ -10,25 +10,31 @@ f = open('train-v2.0.json')
 # a dictionary
 data = json.load(f)['data'] #Accesamos directo a la data
 
-file_context = data[0]['paragraphs'][0]['context']
+
+file_context = data[0]['paragraphs'][0]['context'].lower()
 print(file_context)
 
-#procedemos a tokenizar 
-#pip install nltk en caso de que no lo tengan y en terminal
+questions = data[0]['paragraphs'][0]['qas']
+question_1_data = questions[0]
+question_1_data_question = question_1_data['question'].lower()
+question_1_data_answer = question_1_data['answers'][0]['text'].lower()
+print(question_1_data_answer)
+
 import nltk
 #nltk.download('punkt')
 #nltk.download('stopwords')
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 from nltk.tokenize import word_tokenize
+from nltk.probability import FreqDist
 
-#hacemos el preprocesamiento que nos piden Luis --> tokenización
+#Preprocessing of context
 
-#Set all words to lowercase --> paso 1
+#1 Set all words to lowercase
 file_context = file_context.lower()
 #print(file_context)
 
-#Remove stopwords --> paso 2
+#2 Remove stopwords
 my_txt = file_context
 filtered_list = []
 stop_words = nltk.corpus.stopwords.words('english')
@@ -37,16 +43,113 @@ words = word_tokenize(my_txt)
 for w in words:
     if w.lower() not in stop_words:
         filtered_list.append(w)
-        
-print('List without stop words')
+
+
+print(f'{"2. List without stop words":-^30}')
 print(filtered_list)
 
 my_clean_txt = " ".join(filtered_list)
+print(f'{"2. Filtered text":-^30}')
 print(my_clean_txt)
 
-#print(file_context)
+#3 Drop words with less than 5 ocurrences 
+#fdist = FreqDist(filtered_list)
+#print(fdist)
 
-#tokenized_text=sent_tokenize(text)
-#print(tokenized_text)
+#print(f'{"Elements":-^20}')
+#print(fdist.elements)
 
-#Drop words with less than 5 ocurrences --> paso 3
+#4 Use '.' as sentence separator
+text=my_clean_txt
+tokenized_text=sent_tokenize(text)
+print(tokenized_text)
+
+my_clean_txt = " ".join(tokenized_text)
+print(f'{"4. Sentences separated by .":-^40}')
+print(my_clean_txt)
+
+print(f'{"4. Words .":-^40}')
+words_from_context = word_tokenize(my_clean_txt)
+print(words_from_context)
+
+
+
+#Preprocessing 
+
+def preprocessing(text):
+    #1 Set all words to lowercase
+    file_context = text.lower()
+    #print(file_context)
+
+    #2 Remove stopwords
+    my_txt = file_context
+    filtered_list = []
+    stop_words = nltk.corpus.stopwords.words('english')
+    # Tokenize the sentence
+    words = word_tokenize(my_txt)
+    for w in words:
+        if w.lower() not in stop_words:
+            filtered_list.append(w)
+
+
+    #print(f'{"2. List without stop words":-^30}')
+    #print(filtered_list)
+
+    my_clean_txt = " ".join(filtered_list)
+    #print(f'{"2. Filtered text":-^30}')
+    #print(my_clean_txt)
+
+    #3 Drop words with less than 5 ocurrences 
+    #fdist = FreqDist(filtered_list)
+    #print(fdist)
+
+    #print(f'{"Elements":-^20}')
+    #print(fdist.elements)
+
+    #4 Use '.' as sentence separator
+    text=my_clean_txt
+    tokenized_text=sent_tokenize(text)
+    #print(tokenized_text)
+
+    my_clean_txt = " ".join(tokenized_text)
+    #print(f'{"4. Sentences separated by .":-^40}')
+    #print(my_clean_txt)
+
+    print(f'{"4. Words .":-^40}')
+    words_from_context = word_tokenize(my_clean_txt)
+    print(words_from_context)
+    
+    return (words_from_context)
+    
+    
+    
+    #define Jaccard Similarity function
+def jaccard(list1, list2):
+    intersection = len(list(set(list1).intersection(list2)))
+    union = (len(list1) + len(list2)) - intersection
+    return float(intersection) / union
+
+#question_1_data_question = question_1_data['question'].lower()
+#question_1_data_answer = question_1_data['answers'][0]['text'].lower()
+
+tokenized_text=sent_tokenize(file_context)
+print(tokenized_text)
+
+context_sentence_preprop = []
+
+for context_sentence in tokenized_text:
+    context_sentence_preprop.append(preprocessing(context_sentence))
+
+#print('Final:')
+#print(context_sentence_preprop)
+question_preprop = preprocessing(question_1_data_question)
+print(f'{"Question: .":-^40}')
+print(question_preprop)
+
+print(f'{"Jaccard by context-sentence: .":-^40}')
+for context_sentence in context_sentence_preprop:
+    print(jaccard(context_sentence, question_preprop))
+
+print(f'{"Jaccard by fullcontext: .":-^40}')
+words_from_context = preprocessing(file_context)
+print(jaccard(words_from_context, question_preprop))
