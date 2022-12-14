@@ -1,24 +1,12 @@
 
 import json
   
-# con esto abrimos el train 
-#Si su compu no lo pone bonito visualmente pueden descargar firefox developer edition y/o json formatter pro
-
+# Opening JSON file
 f = open('train-v2.0.json')
   
 # returns JSON object as 
 # a dictionary
 data = json.load(f)['data'] #Accesamos directo a la data
-
-
-file_context = data[0]['paragraphs'][0]['context'].lower()
-print(file_context)
-
-questions = data[0]['paragraphs'][0]['qas']
-question_1_data = questions[0]
-question_1_data_question = question_1_data['question'].lower()
-question_1_data_answer = question_1_data['answers'][0]['text'].lower()
-print(question_1_data_answer)
 
 import nltk
 #nltk.download('punkt')
@@ -72,13 +60,23 @@ print(f'{"4. Words .":-^40}')
 words_from_context = word_tokenize(my_clean_txt)
 print(words_from_context)
 
-
-
 #Preprocessing 
+def normalize(s):
+    replacements = (
+        ("á", "a"),
+        ("é", "e"),
+        ("í", "i"),
+        ("ó", "o"),
+        ("ú", "u"),
+    )
+    for a, b in replacements:
+        s = s.replace(a, b).replace(a.upper(), b.upper())
+    return s
 
 def preprocessing(text):
     #1 Set all words to lowercase
     file_context = text.lower()
+    file_context = normalize(text)
     #print(file_context)
 
     #2 Remove stopwords
@@ -90,7 +88,6 @@ def preprocessing(text):
     for w in words:
         if w.lower() not in stop_words:
             filtered_list.append(w)
-
 
     #print(f'{"2. List without stop words":-^30}')
     #print(filtered_list)
@@ -114,42 +111,168 @@ def preprocessing(text):
     my_clean_txt = " ".join(tokenized_text)
     #print(f'{"4. Sentences separated by .":-^40}')
     #print(my_clean_txt)
-
-    print(f'{"4. Words .":-^40}')
-    words_from_context = word_tokenize(my_clean_txt)
-    print(words_from_context)
+    
+    words_from_context = word_tokenize(my_clean_txt)    
+    #print(f'{"4. Words .":-^40}')
+    #print(words_from_context)
     
     return (words_from_context)
     
-    
-    
     #define Jaccard Similarity function
 def jaccard(list1, list2):
+    #print(f'{"Comparing for Jaccard: .":_^40}')
+    #print(list1)
+    #print(list2)
     intersection = len(list(set(list1).intersection(list2)))
+    #print('Intersection: ' + str(intersection) )
     union = (len(list1) + len(list2)) - intersection
+    #print('Union ' + str(union))
+    
     return float(intersection) / union
 
-#question_1_data_question = question_1_data['question'].lower()
-#question_1_data_answer = question_1_data['answers'][0]['text'].lower()
+def contains_answer(context_sentence, answer):
+    #print(f'{"Comparing: .":*^40}')
+    #print(context_sentence)
+    #print(answer)
+    return set(answer).issubset(set(context_sentence))
+
+def table_entry(context_sentence_preprop, question_preprop, question_data_answer_preprop):
+    table_entries = []
+    for context_sentence in context_sentence_preprop:
+        jaccard_result = jaccard(context_sentence, question_preprop)
+        #print(jaccard_result)
+        context_sentence_contains_answer = 1 if contains_answer(context_sentence, question_data_answer_preprop) else 0
+        #print(context_sentence_contains_answer)
+        table_entries.append([jaccard_result, context_sentence_contains_answer])
+    return table_entries
+    
+    file_context = data[0]['paragraphs'][0]['context'].lower()
+print('Context')
+print(file_context)
+
+questions = data[0]['paragraphs'][0]['qas']
+question_1_data = questions[0]
+question_1_data_question = question_1_data['question'].lower()
+question_1_data_answer = question_1_data['answers'][0]['text'].lower()
+print('Answer')
+print(question_1_data_answer)
 
 tokenized_text=sent_tokenize(file_context)
-print(tokenized_text)
+#print(tokenized_text)
 
 context_sentence_preprop = []
 
 for context_sentence in tokenized_text:
     context_sentence_preprop.append(preprocessing(context_sentence))
 
-#print('Final:')
-#print(context_sentence_preprop)
+print('Context Sentence Preprop:')
+print(context_sentence_preprop)
+print(f'{"Question original: .":-^40}')
+print(question_1_data_question)
 question_preprop = preprocessing(question_1_data_question)
-print(f'{"Question: .":-^40}')
+print(f'{"Question Preprop: .":-^40}')
 print(question_preprop)
 
-print(f'{"Jaccard by context-sentence: .":-^40}')
-for context_sentence in context_sentence_preprop:
-    print(jaccard(context_sentence, question_preprop))
+print(f'{"Answer prepop":-^40}')
+question_1_data_answer_prepop = preprocessing(question_1_data_answer)
+print(question_1_data_answer_prepop)
 
-print(f'{"Jaccard by fullcontext: .":-^40}')
-words_from_context = preprocessing(file_context)
-print(jaccard(words_from_context, question_preprop))
+print('Results:')
+results = table_entry(context_sentence_preprop, question_preprop,question_1_data_answer_prepop)
+print(results)
+
+#print(f'{"Jaccard by context-sentence: .":-^40}')
+#for context_sentence in context_sentence_preprop:
+#    print(jaccard(context_sentence, question_preprop))
+
+#print(f'{"Jaccard by fullcontext: .":-^40}')
+#words_from_context = preprocessing(file_context)
+#print(jaccard(words_from_context, question_preprop))
+
+#print(f'{"ContainsAnswer by context-sentence: .":-^40}')
+#for context_sentence in context_sentence_preprop:
+#    print(contains_answer(context_sentence, question_1_data_answer_prepop))
+
+#OJO, AQUÍ SOLO VA A CORRER CON DOS, PARA PROBAR EL DATASET COMPLETO, QUITEN LOS #. PRIMERO RECOMIENDO PROBAR TAL CUAL ESTÁ AHORITRA
+limite_entradas = 2
+#limite_entradas = len(data) # REMOVER PARA PROBAR CON TODA LA DATA
+limite_paragraph = 2
+limite_questions = 2
+
+#Variables que se necesitan:
+context = None
+questions = None
+nth_question_data = None
+nth_question = None
+nth_question_answer = None
+final_table = []
+
+for i in range(limite_entradas):
+    
+    #limite_paragraph = len(data[i]['paragraphs']) # REMOVER PARA PROBAR CON TODA LA DATA
+    #print(len(data[i]['paragraphs']))
+    
+    for j in range(limite_paragraph):
+        context = data[i]['paragraphs'][j]['context']
+        #print(context)
+        
+        questions = data[i]['paragraphs'][j]['qas']
+        
+        #limite_questions = len(questions) # REMOVER PARA PROBAR CON TODA LA DATA
+        
+        for k in range (limite_questions):
+            nth_question_data = questions[k]
+            nth_question = nth_question_data['question']
+            #print(nth_question)
+            answers = nth_question_data['answers']
+            for l in range(len(answers)):
+                nth_question_answer = answers[l]['text']
+                #print(nth_question_answer)
+                
+                #Aquí hacemos el preprocesamiento...
+                
+                #Primero, tokenizamos por sentencias el contexto
+                tokenized_text=sent_tokenize(context)
+                #print(tokenized_text)
+
+                context_sentence_preprop = []
+
+                for context_sentence in tokenized_text:
+                    context_sentence_preprop.append(preprocessing(context_sentence))
+                    
+                #Despues, hacemos el preprocesamiento de la pregunta y la respuesta
+                
+                #print(f'{"Question original: .":-^40}')
+                #print(nth_question)
+                question_preprop = preprocessing(nth_question)
+                #print(f'{"Question Preprop: .":-^40}')
+                #print(question_preprop)
+                
+                #print(f'{"Answer prepop":-^40}')
+                question_answer_prepop = preprocessing(nth_question_answer)
+                #print(question_answer_prepop)
+                
+                #Entonces, calculamos las entradas de la tabla
+                #print('Results: ')
+                results = table_entry(context_sentence_preprop, question_preprop,question_answer_prepop)
+                #print(results)
+                for result in results:
+                    final_table.append(result)
+                
+
+#print(final_table)
+for result in final_table:
+    print(result)
+    
+    
+    import pandas as pd
+
+with open('train-v2.0.json','r') as f:
+    data = json.loads(f.read())
+
+train = pd.json_normalize(data, record_path = ['data', 'paragraphs', 'qas', 'answers'], 
+                          meta = [['data', 'title'], ['data', 'paragraphs', 'context'], ['data', 'paragraphs', 'qas', 'question'], ['data', 'paragraphs', 'qas', 'is_impossible']])
+#print(train)
+train.rename(columns={'text':'answer', 'data.paragraphs.context':'context', 'data.title':'title', 'data.paragraphs.qas.question':'question', 'data.paragraphs.qas.is_impossible':'is_impossible'}, inplace=True)
+
+print(train)
