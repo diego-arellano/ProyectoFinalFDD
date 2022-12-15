@@ -82,12 +82,20 @@ jaccard_df["Jaccard(context_i_line_j, q_i_k)"] = train.apply(lambda x: jaccard_d
 
 jaccard_df["Ans"] = train.apply(lambda x: contains_answer(x['context'], x['answer'], x['is_impossible']), axis=1)
 
-print(jaccard_df.head(10))
-
-
+jaccard_df = jaccard_df.reset_index()
 #%%
-#model = lg.Logit()
 
-n = jaccard_df.last_valid_index()*0.05
-n
+
+sample_size_5 = int(len(jaccard_df)*0.05)
+sample_size_1 = int(len(jaccard_df)*0.01)
+
+s_data_5 = jaccard_df.sample(sample_size_5, random_state=123454321)
+s_data_1 = jaccard_df.sample(sample_size_1, random_state=123454321)
+
+sample_X_5 = s_data_5.iloc[:,:].values
+print(sample_X_5)
+#sample_y_5 = 
+
+#sample_X_1 = 
+#sample_y_1 = 
 # %%
